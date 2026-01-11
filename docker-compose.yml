@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    volumes:
+      - ./:/app:cached
+      - ./data:/app/data
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - ETHERSCAN_API_KEY=${ETHERSCAN_API_KEY}
+      - PINATA_API_KEY=${PINATA_API_KEY}
+      - PINATA_SECRET=${PINATA_SECRET}
+      - BUNDLR_URL=${BUNDLR_URL}
+      - BUNDLR_PRIVATE_KEY=${BUNDLR_PRIVATE_KEY}
+    command: uvicorn interface.api:app --host 0.0.0.0 --port 8000

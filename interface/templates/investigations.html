@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Investigations</h1>
+  <table>
+    <thead><tr><th>ID</th><th>Address</th><th>Created</th><th>Notes</th></tr></thead>
+    <tbody>
+      {% for inv in invs %}
+        <tr>
+          <td><a href="/admin/investigations/{{ inv.id }}">{{ inv.id }}</a></td>
+          <td>{{ inv.address }}</td>
+          <td>{{ inv.created_at }}</td>
+          <td>{{ inv.notes }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

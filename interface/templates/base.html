@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <title>SmartSec Admin</title>
+    <style>
+      body { font-family: Arial, sans-serif; max-width: 960px; margin: 20px auto; }
+      nav { margin-bottom: 12px; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #ddd; padding: 8px; }
+      th { background: #f4f4f4; }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="/admin">Dashboard</a> | <a href="/admin/investigations">Investigations</a>
+    </nav>
+    {% block content %}{% endblock %}
+  </body>
+</html>

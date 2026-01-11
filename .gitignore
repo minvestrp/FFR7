@@ -1,0 +1,14 @@
+__pycache__/
+.env
+.env.local
+venv/
+.venv/
+*.pyc
+.slither/
+.slither-output.json
+.idea/
+.vscode/
+build/
+dist/
+*.egg-info/
+*.db

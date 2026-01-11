@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <title>Investigation Report - {{ investigation.id }}</title>
+    <style>
+      body { font-family: DejaVu Sans, Arial, sans-serif; margin: 20px; }
+      h1 { color: #333; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+      th { background: #f5f5f5; }
+      .meta { margin-bottom: 12px; }
+    </style>
+  </head>
+  <body>
+    <h1>Investigation: {{ investigation.id }}</h1>
+    <div class="meta">
+      <strong>Address:</strong> {{ investigation.address }}<br/>
+      <strong>Created At:</strong> {{ investigation.created_at }}<br/>
+      <strong>Notes:</strong> {{ investigation.notes or '-' }}<br/>
+      <strong>Edges:</strong> {{ edges|length }}
+    </div>
+
+    <h2>Transactions</h2>
+    <table>
+      <thead>
+        <tr><th>#</th><th>From</th><th>To</th><th>Value</th><th>Tx</th><th>Time</th></tr>
+      </thead>
+      <tbody>
+      {% for e in edges %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ e.from_addr }}</td>
+          <td>{{ e.to_addr }}</td>
+          <td>{{ e.value }}</td>
+          <td>{{ e.tx_hash }}</td>
+          <td>{{ e.time }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+  </body>
+</html>

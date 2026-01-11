@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Admins{% endblock %}
+
+{% block content %}
+<h1>Admins</h1>
+<p>Manage admin tokens that grant access to the admin UI.</p>
+
+{% if request.query_params.get('created_token') %}
+<div class="created-token" style="padding:8px;border:1px solid #6c6; background:#efe; margin-bottom:10px;">
+  <strong>Admin created:</strong>
+  <code id="created-token">{{ request.query_params.get('created_token') }}</code>
+  <button class="copy-btn" data-token="{{ request.query_params.get('created_token') }}">Copy</button>
+  <small>Save this token — it won't be shown again.</small>
+</div>
+{% endif %}
+
+<h2>Create Admin</h2>
+<form method="post" action="/admin/admins">
+  <label>Name: <input type="text" name="name" /></label>
+  <label>Token (leave empty to auto-generate): <input type="text" name="token" /></label>
+  <button type="submit">Create</button>
+</form>
+
+<h2>Existing Admins</h2>
+<table>
+  <thead>
+    <tr><th>ID</th><th>Name</th><th>Token</th><th>Created</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {% for a in admins %}
+    <tr>
+      <td>{{ a.id }}</td>
+      <td>{{ a.name or '-' }}</td>
+      <td>
+        <code>{{ a.token }}</code>
+        <button class="copy-btn" data-token="{{ a.token }}" aria-label="Copy token">Copy</button>
+      </td>
+      <td>{{ a.created_at }}</td>
+      <td>
+        <form method="post" action="/admin/admins/{{ a.id }}/delete" style="display:inline">
+          <button type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No admins configured.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<script>
+// Simple copy-to-clipboard with a small transient message
+document.addEventListener('click', function (e) {
+  const btn = e.target.closest('.copy-btn');
+  if (!btn) return;
+  const token = btn.getAttribute('data-token');
+  if (!token) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(token).then(() => {
+      const prev = btn.dataset.origText || btn.textContent;
+      btn.dataset.origText = prev;
+      btn.textContent = 'Copied!';
+      setTimeout(() => (btn.textContent = prev), 1500);
+    });
+  } else {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = token;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); btn.textContent = 'Copied!'; }
+    finally { document.body.removeChild(ta); setTimeout(() => (btn.textContent = 'Copy'), 1500); }
+  }
+});
+</script>
+
+{% endblock %}

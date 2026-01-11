@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Dashboard</h1>
+  <p>Total recent investigations: {{ total }}</p>
+  <ul>
+    {% for inv in invs %}
+      <li><a href="/admin/investigations/{{ inv.id }}">Investigation {{ inv.id }} — {{ inv.address }}</a></li>
+    {% endfor %}
+  </ul>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h1>Investigation {{ data.investigation.id }}</h1>
+  <p><strong>Address:</strong> {{ data.investigation.address }}</p>
+  <p><strong>Created:</strong> {{ data.investigation.created_at }}</p>
+  <p><strong>Notes:</strong> {{ data.investigation.notes }}</p>
+
+  <h2>Exports</h2>
+  <ul>
+    {% if json_path %}<li><a href="/admin/download/json/{{ data.investigation.id }}">Download JSON</a></li>{% endif %}
+    {% if pdf_path %}<li><a href="/admin/download/pdf/{{ data.investigation.id }}">Download PDF</a></li>{% endif %}
+    {% if graph_path %}<li><img src="/static/{{ data.investigation.id }}.png" alt="graph" style="max-width:100%;height:auto"/></li>{% endif %}
+  </ul>
+
+  <h2>Transactions</h2>
+  <table>
+    <thead><tr><th>#</th><th>From</th><th>To</th><th>Value</th><th>Tx</th><th>Time</th></tr></thead>
+    <tbody>
+      {% for e in data.edges %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>{{ e.from_addr }}</td>
+          <td>{{ e.to_addr }}</td>
+          <td>{{ e.value }}</td>
+          <td>{{ e.tx_hash }}</td>
+          <td>{{ e.time }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

@@ -1,0 +1,23 @@
+# Основные зависимости (стабильные и рекомендуемые)
+web3==7.0.0
+requests
+python-dotenv
+configparser
+pandas
+matplotlib
+fastapi
+uvicorn[standard]
+PyQt5
+networkx
+matplotlib
+pydot
+slither-analyzer
+mythril
+manticore
+brownie
+pytest
+pytest-cov
+ipfshttpclient
+requests
+weasyprint
+Jinja2
