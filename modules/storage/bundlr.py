@@ -62,9 +62,9 @@ def upload_file_to_bundlr(path: str, bundlr_url: Optional[str] = None, private_k
     This function intentionally validates configuration and raises intuitive
     errors to help users configure their environment.
     """
-    url = bundlr_url or BUNDLR_URL
-    key = private_key or BUNDLR_PRIVATE_KEY
-    cur = currency or BUNDLR_CURRENCY
+    url = bundlr_url or BUNDLR_URL or os.getenv("BUNDLR_URL")
+    key = private_key or BUNDLR_PRIVATE_KEY or os.getenv("BUNDLR_PRIVATE_KEY")
+    cur = currency or BUNDLR_CURRENCY or os.getenv("BUNDLR_CURRENCY", "ar")
 
     if not url:
         raise ValueError("Bundlr URL not configured. Set BUNDLR_URL environment variable or pass bundlr_url parameter.")
