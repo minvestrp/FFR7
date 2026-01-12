@@ -18,8 +18,9 @@ jobs:
         python-version: '3.11'
     - name: Install system dependencies (for WeasyPrint / build)
       run: |
+        set -eo pipefail
         apt-get update
-        apt-get install -y --no-install-recommends \
+        apt-get -y install --no-install-recommends \
           build-essential \
           gcc \
           libcairo2 \
@@ -30,8 +31,26 @@ jobs:
           libxslt1-dev \
           libjpeg-dev \
           zlib1g-dev \
-          ca-certificates \
-        && rm -rf /var/lib/apt/lists/*
+          ca-certificates || (
+            echo "apt install failed - dumping apt logs and retrying";
+            ls -la /var/log/apt || true;
+            cat /var/log/apt/term.log || true;
+            cat /var/log/apt/history.log || true;
+            apt-get update;
+            apt-get -y install --no-install-recommends \
+              build-essential \
+              gcc \
+              libcairo2 \
+              libpango1.0-0 \
+              libgdk-pixbuf2.0-0 \
+              libffi-dev \
+              libxml2 \
+              libxslt1-dev \
+              libjpeg-dev \
+              zlib1g-dev \
+              ca-certificates;
+          )
+        rm -rf /var/lib/apt/lists/*
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
