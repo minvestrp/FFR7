@@ -14,7 +14,7 @@ RUN apt-get update \
        libffi-dev \
        libxml2 \
        libxslt1-dev \
-       libjpeg62-turbo-dev \
+       libjpeg-dev \
        zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
