@@ -19,8 +19,11 @@ jobs:
     - name: Install system dependencies (for WeasyPrint / build)
       run: |
         set -eo pipefail
-        apt-get update
-        apt-get -y install --no-install-recommends \
+        mkdir -p diagnostics
+        echo "=== apt-get update ===" > diagnostics/apt-update.log
+        sudo apt-get update -o Debug::Acquire::http=true 2>&1 | tee -a diagnostics/apt-update.log
+        echo "=== apt-get install ===" > diagnostics/apt-install.log
+        sudo apt-get -y install --no-install-recommends \
           build-essential \
           gcc \
           libcairo2 \
@@ -31,26 +34,10 @@ jobs:
           libxslt1-dev \
           libjpeg-dev \
           zlib1g-dev \
-          ca-certificates || (
-            echo "apt install failed - dumping apt logs and retrying";
-            ls -la /var/log/apt || true;
-            cat /var/log/apt/term.log || true;
-            cat /var/log/apt/history.log || true;
-            apt-get update;
-            apt-get -y install --no-install-recommends \
-              build-essential \
-              gcc \
-              libcairo2 \
-              libpango1.0-0 \
-              libgdk-pixbuf2.0-0 \
-              libffi-dev \
-              libxml2 \
-              libxslt1-dev \
-              libjpeg-dev \
-              zlib1g-dev \
-              ca-certificates;
-          )
-        rm -rf /var/lib/apt/lists/*
+          ca-certificates 2>&1 | tee -a diagnostics/apt-install.log
+        sudo rm -rf /var/lib/apt/lists/*
+        echo "=== dpkg -l ===" > diagnostics/dpkg-list.txt
+        dpkg -l >> diagnostics/dpkg-list.txt 2>&1 || true
 
     - name: Collect apt logs
       if: always()
@@ -62,6 +49,16 @@ jobs:
         cat /var/log/apt/term.log >> diagnostics/apt-term.log || true
         echo "=== history.log ===" > diagnostics/apt-history.log || true
         cat /var/log/apt/history.log >> diagnostics/apt-history.log || true
+        echo "=== sources.list ===" > diagnostics/apt-sources.list || true
+        cat /etc/apt/sources.list >> diagnostics/apt-sources.list || true
+        echo "=== /etc/apt/sources.list.d ===" > diagnostics/apt-sources.list.d || true
+        ls -la /etc/apt/sources.list.d >> diagnostics/apt-sources.list.d || true
+        for f in /etc/apt/sources.list.d/*; do
+          [ -f "$f" ] && {
+            echo "=== $f ===" >> diagnostics/apt-sources.list.d;
+            cat "$f" >> diagnostics/apt-sources.list.d;
+          } || true
+        done
         dmesg | tail -n 200 > diagnostics/dmesg-tail.txt || true
 
     - name: Upload apt logs
