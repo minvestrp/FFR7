@@ -62,13 +62,17 @@ def render_investigation_html(db, investigation_id: int) -> str:
     return html
 
 
+# Provide a module-level HTML symbol to allow tests to monkeypatch the behavior
+try:
+    from weasyprint import HTML  # type: ignore
+except Exception:
+    HTML = None
+
+
 def export_investigation_pdf(db, investigation_id: int, out_path: str) -> None:
     """Экспорт расследования в PDF. Использует WeasyPrint (HTML -> PDF) через Jinja2 шаблон."""
-    try:
-        from weasyprint import HTML
-    except Exception:
+    if HTML is None:
         raise RuntimeError("WeasyPrint is required for PDF export. Install weasyprint and its system deps.")
 
     html = render_investigation_html(db, investigation_id)
     HTML(string=html).write_pdf(out_path)
-

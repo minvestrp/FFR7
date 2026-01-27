@@ -8,6 +8,8 @@ def test_create_and_export(monkeypatch, tmp_path):
         return 999
 
     monkeypatch.setattr('modules.forensics.trace_analyzer.TraceAnalyzer.analyze_and_store', fake_analyze_and_store)
+    # Ensure TraceAnalyzer can be constructed
+    monkeypatch.setenv('ETHERSCAN_API_KEY', 'DUMMY')
 
     client = TestClient(app)
     r = client.post('/investigations', json={'address': '0xSOMEADDR'})

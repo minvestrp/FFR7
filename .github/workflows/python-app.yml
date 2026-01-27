@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main, master ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, ci-coverage-token-ux ]
 
 jobs:
   build:
@@ -15,11 +15,63 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.10'
+    - name: Install system dependencies (for WeasyPrint / build)
+      run: |
+        set -eo pipefail
+        mkdir -p diagnostics
+        echo "=== apt-get update ===" > diagnostics/apt-update.log
+        sudo apt-get update -o Debug::Acquire::http=true 2>&1 | tee -a diagnostics/apt-update.log
+        echo "=== apt-get install ===" > diagnostics/apt-install.log
+        sudo apt-get -y install --no-install-recommends \
+          build-essential \
+          gcc \
+          libcairo2 \
+          libpango-1.0-0 \
+          libgdk-pixbuf2.0-0 \
+          libffi-dev \
+          libxml2 \
+          libxslt1-dev \
+          libjpeg-dev \
+          zlib1g-dev \
+          ca-certificates 2>&1 | tee -a diagnostics/apt-install.log
+        sudo rm -rf /var/lib/apt/lists/*
+        echo "=== dpkg -l ===" > diagnostics/dpkg-list.txt
+        dpkg -l >> diagnostics/dpkg-list.txt 2>&1 || true
+
+    - name: Collect apt logs
+      if: always()
+      run: |
+        mkdir -p diagnostics
+        echo "=== /var/log/apt listing ===" > diagnostics/apt-ls.txt || true
+        ls -la /var/log/apt >> diagnostics/apt-ls.txt || true
+        echo "=== term.log ===" > diagnostics/apt-term.log || true
+        cat /var/log/apt/term.log >> diagnostics/apt-term.log || true
+        echo "=== history.log ===" > diagnostics/apt-history.log || true
+        cat /var/log/apt/history.log >> diagnostics/apt-history.log || true
+        echo "=== sources.list ===" > diagnostics/apt-sources.list || true
+        cat /etc/apt/sources.list >> diagnostics/apt-sources.list || true
+        echo "=== /etc/apt/sources.list.d ===" > diagnostics/apt-sources.list.d || true
+        ls -la /etc/apt/sources.list.d >> diagnostics/apt-sources.list.d || true
+        for f in /etc/apt/sources.list.d/*; do
+          [ -f "$f" ] && {
+            echo "=== $f ===" >> diagnostics/apt-sources.list.d;
+            cat "$f" >> diagnostics/apt-sources.list.d;
+          } || true
+        done
+        dmesg | tail -n 200 > diagnostics/dmesg-tail.txt || true
+
+    - name: Upload apt logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: apt-logs
+        path: diagnostics
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        # Use legacy resolver to avoid resolution-too-deep backtracking on web3/matplotlib graph
+        pip install --use-deprecated=legacy-resolver -r requirements.txt
     - name: Run tests
       run: |
         mkdir -p pytest-artifacts

@@ -16,7 +16,7 @@ RUN apt-get update \
        libffi-dev \
        libxml2-dev \
        libxslt1-dev \
-       libjpeg62-turbo-dev \
+       libjpeg-dev \
        zlib1g-dev \
        ca-certificates \
     && rm -rf /var/lib/apt/lists/*
@@ -38,7 +38,7 @@ RUN apt-get update \
        libcairo2 \
        libpango-1.0-0 \
        libgdk-pixbuf2.0-0 \
-       libjpeg62-turbo \
+       libjpeg-dev \
        zlib1g \
        ca-certificates \
     && rm -rf /var/lib/apt/lists/*

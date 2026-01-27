@@ -23,7 +23,7 @@ def test_admin_requires_token_and_login(monkeypatch):
     assert 'Dashboard' in r3.text
 
     # Login via form and cookie
-    r4 = client.post('/admin/login', data={'token': 'SECRET'}, allow_redirects=False)
+    r4 = client.post('/admin/login', data={'token': 'SECRET'}, follow_redirects=False)
     assert r4.status_code in (302, 307)
     assert 'set-cookie' in r4.headers
     cookie = r4.headers.get('set-cookie')

@@ -17,8 +17,8 @@ def test_cli_export_json(monkeypatch, tmp_path, capsys):
     monkeypatch.setattr(ta, 'fetch_txs', lambda address, page_size=1000: fake_txs)
 
     # Monkeypatch TraceAnalyzer used in CLI to our instance
-    monkeypatch.setattr('interface.cli.TraceAnalyzer', lambda: ta)
-
+    import modules.forensics as mf
+    monkeypatch.setattr(mf, 'TraceAnalyzer', lambda: ta)
     out_file = tmp_path / "out.json"
     sys_argv = sys.argv
     try:

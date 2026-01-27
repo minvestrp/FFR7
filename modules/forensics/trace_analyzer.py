@@ -27,7 +27,9 @@ except Exception:
 
 class TraceAnalyzer:
     def __init__(self, api_key: str = None):
-        self.api_key = api_key or ETHERSCAN_API
+        # Prefer explicit parameter, then environment variable looked up at runtime.
+        # Avoid relying only on the module-level constant so tests can monkeypatch env.
+        self.api_key = api_key or os.getenv("ETHERSCAN_API_KEY") or ETHERSCAN_API
         if not self.api_key:
             raise ValueError("Etherscan API key is required. Set ETHERSCAN_API_KEY in .env or pass as parameter.")
 
@@ -122,4 +124,5 @@ class TraceAnalyzer:
         inv_id = db.add_investigation(address, notes=f"Auto-imported {len(edges)} txs")
         for e in edges:
             db.add_edge(inv_id, e["from"], e["to"], e["value"], e["hash"], e["time"]) 
+        return inv_id
 

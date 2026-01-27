@@ -35,7 +35,12 @@ def test_investigation_detail_flow(tmp_path):
             original_ctor(self, str(db_path))
         ForensicsDB.__init__ = fake_init
 
-        r = client.get(f'/admin/investigations/{inv_id}')
+        # Ensure admin UI allows access in tests
+        import os
+        os.environ['ADMIN_API_TOKEN'] = 'TEST'
+        headers = {'Authorization': 'Bearer TEST'}
+
+        r = client.get(f'/admin/investigations/{inv_id}', headers=headers)
         assert r.status_code == 200
         assert 'Investigation' in r.text
         assert '0xTEST' in r.text

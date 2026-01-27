@@ -4,8 +4,6 @@ import requests
 import subprocess
 from typing import Dict
 
-PINATA_API_KEY = os.getenv("PINATA_API_KEY")
-PINATA_SECRET = os.getenv("PINATA_SECRET")
 
 
 def upload_file_to_ipfs(path: str) -> Dict[str, str]:
@@ -18,11 +16,14 @@ def upload_file_to_ipfs(path: str) -> Dict[str, str]:
 
     Raises RuntimeError if none available.
     """
-    if PINATA_API_KEY and PINATA_SECRET:
+    pinata_api_key = os.getenv("PINATA_API_KEY")
+    pinata_secret = os.getenv("PINATA_SECRET")
+
+    if pinata_api_key and pinata_secret:
         url = "https://api.pinata.cloud/pinning/pinFileToIPFS"
         headers = {
-            "pinata_api_key": PINATA_API_KEY,
-            "pinata_secret_api_key": PINATA_SECRET,
+            "pinata_api_key": pinata_api_key,
+            "pinata_secret_api_key": pinata_secret,
         }
         with open(path, "rb") as f:
             files = {"file": (os.path.basename(path), f)}

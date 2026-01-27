@@ -17,7 +17,7 @@ def test_create_and_use_db_admin(tmp_path, monkeypatch):
     assert r.status_code == 200
 
     # Create a new admin with a token
-    r = client.post('/admin/admins', data={'name': 'Alice', 'token': 'NEWTOKEN'}, headers={'Authorization': 'Bearer ROOT'}, allow_redirects=False)
+    r = client.post('/admin/admins', data={'name': 'Alice', 'token': 'NEWTOKEN'}, headers={'Authorization': 'Bearer ROOT'}, follow_redirects=False)
     assert r.status_code in (302, 303)
     # Redirect location should include the created token so it can be shown to the creator once
     assert 'Location' in r.headers
@@ -45,7 +45,7 @@ def test_create_and_use_db_admin(tmp_path, monkeypatch):
     assert r.status_code == 200
 
     # Delete the admin while authenticated with the same DB token
-    r = client.post(f'/admin/admins/{admin_id}/delete', headers={'Authorization': 'Bearer NEWTOKEN'})
+    r = client.post(f'/admin/admins/{admin_id}/delete', headers={'Authorization': 'Bearer NEWTOKEN'}, follow_redirects=False)
     assert r.status_code in (302, 303)
 
     # Ensure admin removed

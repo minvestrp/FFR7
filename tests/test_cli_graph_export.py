@@ -16,7 +16,8 @@ def test_cli_graph_export(monkeypatch, tmp_path, capsys):
             db.add_edge(inv_id, '0xA', '0xB', '1', '0xTX', '2020-01-01T00:00:00')
             return inv_id
 
-    monkeypatch.setattr('interface.cli.TraceAnalyzer', lambda: FakeTA())
+    import modules.forensics as mf
+    monkeypatch.setattr(mf, 'TraceAnalyzer', lambda: FakeTA())
 
     out_json = tmp_path / "inv.json"
     out_graph = tmp_path / "graph.png"

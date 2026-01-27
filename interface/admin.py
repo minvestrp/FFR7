@@ -14,6 +14,39 @@ if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR, exist_ok=True)
 
 
+def _extract_token_from_request(request: Request) -> str | None:
+    """Robustly extract a bearer token from header, cookies, or query.
+
+    Handles header case-insensitivity and raw scope headers for edge cases in tests.
+    """
+    # Header: Authorization: Bearer <token>
+    auth = request.headers.get("Authorization") or request.headers.get("authorization")
+    candidate = None
+    if auth and isinstance(auth, str) and auth.startswith("Bearer "):
+        candidate = auth.split(" ", 1)[1]
+
+    # Fallback: raw scope headers (bytes)
+    if not candidate:
+        for k, v in request.scope.get("headers", []):
+            try:
+                if k.decode().lower() == "authorization":
+                    s = v.decode()
+                    if s.startswith("Bearer "):
+                        candidate = s.split(" ", 1)[1]
+                        break
+            except Exception:
+                continue
+
+    # Cookie
+    if not candidate:
+        candidate = request.cookies.get("admin_token")
+    # Query param (convenience)
+    if not candidate:
+        candidate = request.query_params.get("token")
+
+    return candidate
+
+
 def _is_authenticated(request: Request) -> bool:
     """Check request for valid admin token in header, cookie, or query param.
 
@@ -21,17 +54,7 @@ def _is_authenticated(request: Request) -> bool:
     table in the Forensics DB (token lookup). If neither exist, access is denied.
     """
     token_env = os.getenv("ADMIN_API_TOKEN")
-    # Header: Authorization: Bearer <token>
-    auth = request.headers.get("Authorization")
-    candidate = None
-    if auth and auth.startswith("Bearer "):
-        candidate = auth.split(" ", 1)[1]
-    # Cookie
-    if not candidate:
-        candidate = request.cookies.get("admin_token")
-    # Query param (convenience)
-    if not candidate:
-        candidate = request.query_params.get("token")
+    candidate = _extract_token_from_request(request)
 
     if not candidate:
         return False
@@ -42,10 +65,9 @@ def _is_authenticated(request: Request) -> bool:
 
     # Fall back to DB-based admin tokens
     try:
-        db = ForensicsDB()
-        db.connect()
-        a = db.get_admin_by_token(candidate)
-        return a is not None
+        with ForensicsDB() as db:
+            a = db.get_admin_by_token(candidate)
+            return a is not None
     except Exception:
         # On error, deny access
         return False
@@ -57,10 +79,10 @@ def dashboard(request: Request):
     if not _is_authenticated(request):
         return templates.TemplateResponse("login.html", {"request": request}, status_code=401)
 
-    db = ForensicsDB()
-    db.init_tables()
-    invs = db.list_investigations(limit=10)
-    total = len(invs)
+    with ForensicsDB() as db:
+        db.init_tables()
+        invs = db.list_investigations(limit=10)
+        total = len(invs)
     return templates.TemplateResponse("dashboard.html", {"request": request, "total": total, "invs": invs})
 
 
@@ -97,9 +119,9 @@ def list_investigations(request: Request):
     if not _is_authenticated(request):
         return templates.TemplateResponse("login.html", {"request": request}, status_code=401)
 
-    db = ForensicsDB()
-    db.init_tables()
-    invs = db.list_investigations(limit=100)
+    with ForensicsDB() as db:
+        db.init_tables()
+        invs = db.list_investigations(limit=100)
     return templates.TemplateResponse("investigations.html", {"request": request, "invs": invs})
 
 
@@ -108,32 +130,32 @@ def view_investigation(request: Request, inv_id: int):
     if not _is_authenticated(request):
         return templates.TemplateResponse("login.html", {"request": request}, status_code=401)
 
-    db = ForensicsDB()
-    try:
-        data = db.get_investigation(inv_id)
-    except KeyError:
-        raise HTTPException(status_code=404, detail="Investigation not found")
+    with ForensicsDB() as db:
+        try:
+            data = db.get_investigation(inv_id)
+        except KeyError:
+            raise HTTPException(status_code=404, detail="Investigation not found")
 
-    # Prepare export file paths
-    json_path = os.path.join(DATA_DIR, f"investigation_{inv_id}.json")
-    pdf_path = os.path.join(DATA_DIR, f"investigation_{inv_id}.pdf")
-    graph_path = os.path.join(DATA_DIR, f"investigation_{inv_id}.png")
+        # Prepare export file paths
+        json_path = os.path.join(DATA_DIR, f"investigation_{inv_id}.json")
+        pdf_path = os.path.join(DATA_DIR, f"investigation_{inv_id}.pdf")
+        graph_path = os.path.join(DATA_DIR, f"investigation_{inv_id}.png")
 
-    # Ensure exports exist (generate on demand)
-    try:
-        export_investigation_json(db, inv_id, json_path)
-    except Exception:
-        json_path = None
+        # Ensure exports exist (generate on demand)
+        try:
+            export_investigation_json(db, inv_id, json_path)
+        except Exception:
+            json_path = None
 
-    try:
-        export_investigation_pdf(db, inv_id, pdf_path)
-    except Exception:
-        pdf_path = None
+        try:
+            export_investigation_pdf(db, inv_id, pdf_path)
+        except Exception:
+            pdf_path = None
 
-    try:
-        export_graph_from_db(db, inv_id, graph_path, fmt="png")
-    except Exception:
-        graph_path = None
+        try:
+            export_graph_from_db(db, inv_id, graph_path, fmt="png")
+        except Exception:
+            graph_path = None
 
     return templates.TemplateResponse("investigation_detail.html", {"request": request, "data": data, "json_path": json_path, "pdf_path": pdf_path, "graph_path": graph_path})
 
@@ -163,9 +185,9 @@ def list_admins(request: Request):
     if not _is_authenticated(request):
         return templates.TemplateResponse("login.html", {"request": request}, status_code=401)
 
-    db = ForensicsDB()
-    db.init_tables()
-    admins = db.list_admins(limit=100)
+    with ForensicsDB() as db:
+        db.init_tables()
+        admins = db.list_admins(limit=100)
     return templates.TemplateResponse("admins.html", {"request": request, "admins": admins})
 
 
@@ -181,9 +203,9 @@ async def create_admin(request: Request):
         import secrets
 
         token = secrets.token_urlsafe(32)
-    db = ForensicsDB()
-    db.init_tables()
-    admin_id = db.add_admin(name=name, token=token)
+    with ForensicsDB() as db:
+        db.init_tables()
+        admin_id = db.add_admin(name=name, token=token)
     # Redirect to admins listing and include the created token so it can be shown prominently
     resp = RedirectResponse(url=f"/admin/admins?created_token={token}", status_code=302)
     return resp
@@ -191,10 +213,36 @@ async def create_admin(request: Request):
 
 @router.post('/admins/{admin_id}/delete')
 def delete_admin(request: Request, admin_id: int):
-    if not _is_authenticated(request):
+    # Re-check token explicitly to avoid edge cases with request handling
+    # Extract token similarly to _is_authenticated
+    token_env = os.getenv("ADMIN_API_TOKEN")
+    candidate = _extract_token_from_request(request)
+    if not candidate:
         return templates.TemplateResponse("login.html", {"request": request}, status_code=401)
-    db = ForensicsDB()
-    db.init_tables()
-    db.delete_admin(admin_id)
+
+    if token_env and candidate == token_env:
+        authorized = True
+    else:
+        try:
+            with ForensicsDB() as db:
+                admins_here = db.list_admins()
+                a = db.get_admin_by_token(candidate)
+                authorized = a is not None
+        except Exception:
+            authorized = False
+
+    if not authorized:
+        print(f"DEBUG: delete_admin unauthorized. candidate={candidate}, token_env={token_env}")
+        return templates.TemplateResponse("login.html", {"request": request}, status_code=401)
+
+    # Perform deletion
+    try:
+        with ForensicsDB() as db:
+            db.init_tables()
+            db.delete_admin(admin_id)
+    except Exception as e:
+        print(f"DEBUG: delete_admin exception: {e}")
+        return templates.TemplateResponse("login.html", {"request": request}, status_code=500)
+
     resp = RedirectResponse(url="/admin/admins", status_code=302)
     return resp

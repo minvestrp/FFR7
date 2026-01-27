@@ -20,6 +20,13 @@ class ForensicsDB:
             self.conn = sqlite3.connect(self.path)
             self.conn.row_factory = sqlite3.Row
 
+    def __enter__(self):
+        self.connect()
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+
     def init_tables(self) -> None:
         """Создать таблицы, если они не существуют"""
         self.connect()
