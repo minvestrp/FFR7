@@ -1,18 +1,47 @@
-version: '3.8'
+version: "3.9"
 
 services:
-  app:
-    build: .
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: smartsec
+      POSTGRES_PASSWORD: smartsec
+      POSTGRES_DB: smartsec
     volumes:
-      - ./:/app:cached
-      - ./data:/app/data
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartsec"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build: .
     ports:
       - "8000:8000"
     environment:
-      - PYTHONUNBUFFERED=1
-      - ETHERSCAN_API_KEY=${ETHERSCAN_API_KEY}
-      - PINATA_API_KEY=${PINATA_API_KEY}
-      - PINATA_SECRET=${PINATA_SECRET}
-      - BUNDLR_URL=${BUNDLR_URL}
-      - BUNDLR_PRIVATE_KEY=${BUNDLR_PRIVATE_KEY}
-    command: uvicorn interface.api:app --host 0.0.0.0 --port 8000
+      DATABASE_URL: postgresql+asyncpg://smartsec:smartsec@postgres:5432/smartsec
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      DEBUG: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+
+volumes:
+  postgres_data:
