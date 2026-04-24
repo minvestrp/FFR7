@@ -12,7 +12,7 @@ class Operator(Base):
     name: Mapped[str] = mapped_column(String)
     api_key: Mapped[str] = mapped_column(String, unique=True, default=lambda: str(uuid.uuid4()))
     plan: Mapped[str] = mapped_column(String, default="starter")  # starter|business|enterprise
-    is_active: Mapped[bool] = mapped_column(String, default=True)
+    is_active: Mapped[str] = mapped_column(String, default="true")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 class GameRound(Base):
@@ -26,7 +26,7 @@ class GameRound(Base):
     win_amount: Mapped[float] = mapped_column(Float, default=0.0)
     outcome: Mapped[str] = mapped_column(String)  # win|loss|draw
     seed_hash: Mapped[str] = mapped_column(String)
-    metadata: Mapped[dict] = mapped_column(JSON, default=dict)
+    extra_data: Mapped[dict] = mapped_column(JSON, default=dict)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
 class Settlement(Base):
